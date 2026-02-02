@@ -31,3 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Firebase Json ###
+src/main/resources/firebase-key.json
+
+
+.env.*
