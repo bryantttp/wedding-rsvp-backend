@@ -39,7 +39,7 @@ public class FirebaseConfig {
         GoogleCredentials creds;
 
         // ===== 1) Try Render ENV JSON first =====
-        String json = System.getenv("FIREBASE_SERVICE_ACCOUNT_JSON");
+        String json = System.getenv("FIREBASE_SERVICE_ACCOUNT");
 
         if (json != null && !json.isBlank()) {
             InputStream stream = new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
