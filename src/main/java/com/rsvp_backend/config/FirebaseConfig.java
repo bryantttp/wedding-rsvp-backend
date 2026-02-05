@@ -1,6 +1,9 @@
 package com.rsvp_backend.config;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -18,8 +21,13 @@ import jakarta.annotation.PostConstruct;
 @Configuration
 public class FirebaseConfig {
 
-    @Value("${firebase.serviceAccount}")
-    private Resource serviceAccount;
+    /**
+     * LOCAL fallback (for your computer only)
+     * application.properties:
+     * firebase.serviceAccount=classpath:firebase-key.json
+     */
+    @Value("${firebase.serviceAccount:}")
+    private Resource serviceAccountFile;
 
     @Value("${firebase.projectId}")
     private String projectId;
@@ -28,7 +36,24 @@ public class FirebaseConfig {
     public void init() throws IOException {
         if (!FirebaseApp.getApps().isEmpty()) return;
 
-        GoogleCredentials creds = GoogleCredentials.fromStream(serviceAccount.getInputStream());
+        GoogleCredentials creds;
+
+        // ===== 1) Try Render ENV JSON first =====
+        String json = System.getenv("FIREBASE_SERVICE_ACCOUNT_JSON");
+
+        if (json != null && !json.isBlank()) {
+            InputStream stream = new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
+            creds = GoogleCredentials.fromStream(stream);
+            System.out.println("🔥 Loaded Firebase credentials from ENV");
+        }
+        // ===== 2) Fallback to local file (dev only) =====
+        else {
+            if (serviceAccountFile == null || !serviceAccountFile.exists()) {
+                throw new IllegalStateException("No Firebase credentials found (ENV or file)");
+            }
+            creds = GoogleCredentials.fromStream(serviceAccountFile.getInputStream());
+            System.out.println("💻 Loaded Firebase credentials from local file");
+        }
 
         FirebaseOptions options = FirebaseOptions.builder()
                 .setCredentials(creds)
