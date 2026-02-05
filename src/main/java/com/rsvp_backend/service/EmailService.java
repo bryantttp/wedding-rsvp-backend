@@ -1,119 +1,66 @@
 package com.rsvp_backend.service;
 
-import java.net.URI;
-import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-
-import jakarta.annotation.PostConstruct;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 public class EmailService {
 
-    private final HttpClient httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(10))
-            .build();
+    private static final String BREVO_SEND_EMAIL_URL = "https://api.brevo.com/v3/smtp/email";
 
-    private final String from;
-    private final String apiKey;
-    private final String domain;
-    private final String baseUrl;
+    private final RestTemplate restTemplate = new RestTemplate();
 
-    public EmailService(
-            @Value("${app.mail.from}") String from,
-            @Value("${mailgun.apiKey}") String apiKey,
-            @Value("${mailgun.domain}") String domain,
-            @Value("${mailgun.baseUrl:https://api.mailgun.net}") String baseUrl
-    ) {
-        this.from = from;
-        this.apiKey = apiKey;
-        this.domain = domain;
-        this.baseUrl = baseUrl;
-    }
+    @Value("${brevo.apiKey}")
+    private String brevoApiKey;
 
-    @PostConstruct
-    public void debugMailgunConfig() {
-        System.out.println("MAILGUN API KEY LOADED = " + (apiKey != null && !apiKey.isBlank()));
-        System.out.println("MAILGUN DOMAIN LOADED  = " + (domain != null && !domain.isBlank()));
-        System.out.println("MAILGUN BASE URL       = " + baseUrl);
-        System.out.println("MAIL FROM              = " + from);
-    }
+    @Value("${app.mail.from}")
+    private String fromEmail;
+
+    @Value("${app.mail.fromName}")
+    private String fromName;
 
     public void sendRsvpConfirmation(String to, String name, int groupNumber) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("api-key", brevoApiKey);
+
+        Map<String, Object> sender = new HashMap<>();
+        sender.put("name", fromName);
+        sender.put("email", fromEmail);
+
+        Map<String, Object> toEntry = new HashMap<>();
+        toEntry.put("email", to);
+        toEntry.put("name", name);
+
         String subject = "RSVP received 💍";
-        String text = """
-                Hi %s,
 
-                Thank you! We’ve received your RSVP.
+        // You can switch to htmlContent if you want nicer formatting
+        String textContent = String.format(
+            "Hi %s,\n\n" +
+            "Thank you! We’ve received your RSVP.\n\n" +
+            "Group number: %d\n\n" +
+            "We can’t wait to celebrate with you ❤️\n\n" +
+            "— Bryant & Cindy",
+            name, groupNumber
+        );
 
-                Group number: %d
+        Map<String, Object> body = new HashMap<>();
+        body.put("sender", sender);
+        body.put("to", List.of(toEntry));
+        body.put("subject", subject);
+        body.put("textContent", textContent);
 
-                We can’t wait to celebrate with you ❤️
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
 
-                — Wedding RSVP
-                """.formatted(name, groupNumber);
-
-        sendMailgunMessage(to, subject, text);
-    }
-
-    private void sendMailgunMessage(String to, String subject, String text) {
-        try {
-            if (apiKey == null || apiKey.isBlank() || domain == null || domain.isBlank()) {
-                throw new IllegalStateException("Mailgun config missing: mailgun.apiKey / mailgun.domain");
-            }
-
-            String endpoint = "%s/v3/%s/messages".formatted(baseUrl, domain);
-
-            String form = formEncode(
-                    "from", from,
-                    "to", to,
-                    "subject", subject,
-                    "text", text
-            );
-
-            String basicAuth = Base64.getEncoder()
-                    .encodeToString(("api:" + apiKey).getBytes(StandardCharsets.UTF_8));
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(endpoint))
-                    .timeout(Duration.ofSeconds(20))
-                    .header("Authorization", "Basic " + basicAuth)
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .POST(HttpRequest.BodyPublishers.ofString(form))
-                    .build();
-
-            HttpResponse<String> resp = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (resp.statusCode() < 200 || resp.statusCode() >= 300) {
-                throw new RuntimeException("Mailgun send failed. HTTP " + resp.statusCode() + ": " + resp.body());
-            }
-
-            System.out.println("✅ Mailgun email sent to " + to);
-
-        } catch (Exception e) {
-            // Don't crash your request — just log
-            System.err.println("❌ Mailgun email failed: " + e.getMessage());
-        }
-    }
-
-    private static String formEncode(String... kv) {
-        if (kv.length % 2 != 0) throw new IllegalArgumentException("formEncode expects even number of args");
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < kv.length; i += 2) {
-            if (sb.length() > 0) sb.append("&");
-            sb.append(url(kv[i])).append("=").append(url(kv[i + 1]));
-        }
-        return sb.toString();
-    }
-
-    private static String url(String s) {
-        return URLEncoder.encode(s == null ? "" : s, StandardCharsets.UTF_8);
+        // If Brevo rejects it, Spring will throw an exception here
+        restTemplate.postForEntity(BREVO_SEND_EMAIL_URL, request, String.class);
     }
 }
