@@ -13,19 +13,14 @@ import org.springframework.web.client.RestTemplate;
 
 @Service
 public class EmailService {
-
-    private static final String BREVO_SEND_EMAIL_URL = "https://api.brevo.com/v3/smtp/email";
-
-    private final RestTemplate restTemplate = new RestTemplate();
-
-    @Value("${brevo.apiKey}")
-    private String brevoApiKey;
-
-    @Value("${app.mail.from}")
-    private String fromEmail;
-
-    @Value("${app.mail.fromName}")
-    private String fromName;
+    private final JavaMailSender mailSender;
+    private final String from;
+ 
+    public EmailService(JavaMailSender mailSender,
+                        @Value("${app.mail.from}") String from) {
+        this.mailSender = mailSender;
+        this.from = from;
+    }
 
     public void sendRsvpConfirmation(String to, String name, int groupNumber) {
         HttpHeaders headers = new HttpHeaders();
