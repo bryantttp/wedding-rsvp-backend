@@ -39,7 +39,7 @@ public class EmailService {
 
         if (attendees != null && !attendees.isEmpty()) {
             StringBuilder sb = new StringBuilder();
-            sb.append("\n\nAttendees Added:\n");
+            sb.append("\n\nFamily Members Added:\n");
 
             for (int i = 0; i < attendees.size(); i++) {
                 sb.append(i + 1)
