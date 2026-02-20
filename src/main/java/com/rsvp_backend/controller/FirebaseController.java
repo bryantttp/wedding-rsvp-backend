@@ -8,7 +8,9 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -101,5 +103,21 @@ public class FirebaseController {
         }
 
         return ResponseEntity.ok(result);
+    }
+    @DeleteMapping("/admin/rsvps/{id}")
+    public ResponseEntity<?> deleteRsvp(@PathVariable String id) throws Exception {
+        if (id == null || id.isBlank()) {
+            return ResponseEntity.badRequest().body("Missing document id");
+        }
+
+        var ref = firestore.collection("rsvps").document(id);
+        var snap = ref.get().get();
+
+        if (!snap.exists()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("RSVP not found");
+        }
+
+        ref.delete().get(); // ✅ hard delete
+        return ResponseEntity.ok("Deleted");
     }
 }
