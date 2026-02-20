@@ -1,10 +1,10 @@
 package com.rsvp_backend.dto;
 
+import java.util.List;
+
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 
 public class RsvpRequestDto {
@@ -13,13 +13,11 @@ public class RsvpRequestDto {
   private String name;
 
   @NotBlank
-  @Email
+  @Email(message = "Invalid email format")
   private String email;
 
-  @NotNull
-  @Min(1)
-  @Max(999)
-  private Integer groupNumber;
+  @Size(max = 20, message = "Max 20 attendees")
+  private List<String> listOfAttendees;
 
   public String getName() {
       return name;
@@ -36,11 +34,11 @@ public class RsvpRequestDto {
       this.email = email;
   }
 
-  public Integer getGroupNumber() {
-      return groupNumber;
+  public List<String> getListOfAttendees() {
+      return listOfAttendees;
   }
 
-  public void setGroupNumber(Integer groupNumber) {
-      this.groupNumber = groupNumber;
+  public void setListOfAttendees(List<String> listOfAttendees) {
+      this.listOfAttendees = listOfAttendees;
   }
 }

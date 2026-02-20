@@ -58,19 +58,26 @@ public class FirebaseController {
                     .body("This email has already RSVP’d.");
         }
 
+        List<String> cleanedAttendees = rsvpRequest.getListOfAttendees().stream()
+            .map(String::trim)
+            .filter(s -> !s.isBlank())
+            .toList();
+
         Map<String, Object> doc = new HashMap<>();
         doc.put("name", rsvpRequest.getName());
         doc.put("email", rsvpRequest.getEmail());
-        doc.put("groupNumber", rsvpRequest.getGroupNumber());
+        if (cleanedAttendees != null && !cleanedAttendees.isEmpty()) {
+            doc.put("listOfAttendees", cleanedAttendees);
+        }
         doc.put("createdAt", FieldValue.serverTimestamp());
 
         firestore.collection("rsvps").add(doc).get();
 
         try {
             emailService.sendRsvpConfirmation(
-                rsvpRequest.getEmail(),
-                rsvpRequest.getName(),
-                rsvpRequest.getGroupNumber()
+                email,
+                rsvpRequest.getName().trim(),
+                cleanedAttendees
             );
         } catch (Exception e) {
             System.err.println("Email failed: " + e.getMessage());

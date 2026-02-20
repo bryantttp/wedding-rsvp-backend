@@ -1,5 +1,7 @@
 package com.rsvp_backend.service;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -28,12 +30,31 @@ public class EmailService {
                 (mailPassword != null && !mailPassword.isBlank()));
     }
 
-    public void sendRsvpConfirmation(String to, String name, int groupNumber) {
-        SimpleMailMessage msg = new SimpleMailMessage();
-        msg.setFrom(from);
-        msg.setTo(to);
-        msg.setSubject("RSVP received 💍");
-        msg.setText("""
+    public void sendRsvpConfirmation(String to, String name, List<String> attendees) {
+
+        // -----------------------------
+        // Build attendees section
+        // -----------------------------
+        String attendeesSection = "";
+
+        if (attendees != null && !attendees.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("\n\nAttendees Added:\n");
+
+            for (int i = 0; i < attendees.size(); i++) {
+                sb.append(i + 1)
+                .append(") ")
+                .append(attendees.get(i))
+                .append("\n");
+            }
+
+            attendeesSection = sb.toString();
+        }
+
+        // -----------------------------
+        // Full email text
+        // -----------------------------
+        String emailText = """
                 Hi %s,
 
                 Thank you! We’ve received your RSVP and are so excited to celebrate with you 💍
@@ -50,9 +71,16 @@ public class EmailService {
 
                 We truly appreciate you being part of our special day.
                 See you soon ❤️
+                %s
 
                 — Bryant & Cindy
-                """.formatted(name, groupNumber));
+                """.formatted(name, attendeesSection);
+
+        SimpleMailMessage msg = new SimpleMailMessage();
+        msg.setFrom(from);
+        msg.setTo(to);
+        msg.setSubject("RSVP received 💍");
+        msg.setText(emailText);
 
         mailSender.send(msg);
     }
