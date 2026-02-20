@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.google.cloud.firestore.FieldValue;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.QuerySnapshot;
+import com.google.cloud.firestore.WriteBatch;
+import com.rsvp_backend.dto.DeleteBatchRequestDto;
 import com.rsvp_backend.dto.RsvpRequestDto;
 import com.rsvp_backend.service.EmailService;
 
@@ -104,6 +106,42 @@ public class FirebaseController {
 
         return ResponseEntity.ok(result);
     }
+    @DeleteMapping("/admin/rsvps")
+    public ResponseEntity<?> deleteRsvpsBatch(@Valid @RequestBody DeleteBatchRequestDto req) throws Exception {
+        List<String> ids = req.getIds();
+
+        // sanitize
+        List<String> clean = new ArrayList<>();
+        for (String id : ids) {
+            if (id != null && !id.isBlank()) clean.add(id.trim());
+        }
+
+        if (clean.isEmpty()) {
+            return ResponseEntity.badRequest().body("ids must not be empty");
+        }
+
+        // Firestore batch limit = 500 operations
+        int deleted = 0;
+        int idx = 0;
+
+        while (idx < clean.size()) {
+            int end = Math.min(idx + 500, clean.size());
+            List<String> chunk = clean.subList(idx, end);
+
+            WriteBatch batch = firestore.batch();
+            for (String id : chunk) {
+                var ref = firestore.collection("rsvps").document(id);
+                batch.delete(ref); // hard delete
+            }
+
+            batch.commit().get();
+            deleted += chunk.size();
+            idx = end;
+        }
+
+        return ResponseEntity.ok("Deleted " + deleted + " RSVP(s)");
+    }
+
     @DeleteMapping("/admin/rsvps/{id}")
     public ResponseEntity<?> deleteRsvp(@PathVariable String id) throws Exception {
         if (id == null || id.isBlank()) {
