@@ -89,8 +89,7 @@ public class FirebaseController {
     @GetMapping("/admin/rsvps")
     public ResponseEntity<?> getRsvps() throws Exception {
         var snapshots = firestore.collection("rsvps")
-                .orderBy("groupNumber")
-                .orderBy("createdAt")
+                .orderBy("createdAt") // ✅ only sort by created time now
                 .get()
                 .get();
 
@@ -103,5 +102,4 @@ public class FirebaseController {
 
         return ResponseEntity.ok(result);
     }
-
 }
