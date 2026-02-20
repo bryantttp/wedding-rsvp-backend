@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.google.cloud.firestore.FieldValue;
 import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.QuerySnapshot;
 import com.rsvp_backend.dto.RsvpRequestDto;
 import com.rsvp_backend.service.EmailService;
 
@@ -41,6 +43,21 @@ public class FirebaseController {
 
     @PostMapping("/save-rsvp")
     public ResponseEntity<?> saveRsvp(@Valid @RequestBody RsvpRequestDto rsvpRequest) throws Exception{
+        String email = rsvpRequest.getEmail().trim().toLowerCase();
+
+        // ✅ 1) Check if email already exists
+        QuerySnapshot existing = firestore.collection("rsvps")
+                .whereEqualTo("email", email)
+                .limit(1)
+                .get()
+                .get();
+
+        if (!existing.isEmpty()) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body("This email has already RSVP’d.");
+        }
+
         Map<String, Object> doc = new HashMap<>();
         doc.put("name", rsvpRequest.getName());
         doc.put("email", rsvpRequest.getEmail());

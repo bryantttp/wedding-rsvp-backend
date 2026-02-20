@@ -36,13 +36,22 @@ public class EmailService {
         msg.setText("""
                 Hi %s,
 
-                Thank you! We’ve received your RSVP.
+                Thank you! We’ve received your RSVP and are so excited to celebrate with you 💍
 
-                Group number: %d
+                Wedding Details
+                -----------------------
+                Date: 13 June 2026
+                Venue: Orchard Hotel Singapore
+                Address: 442 Orchard Road, Singapore 238879
+                Reception starts at 6:30 PM
 
-                We can’t wait to celebrate with you ❤️
+                Free-flow wine & beer will be served 🍷🍺
+                No corkage fee as well.
 
-                — Wedding RSVP
+                We truly appreciate you being part of our special day.
+                See you soon ❤️
+
+                — Bryant & Cindy
                 """.formatted(name, groupNumber));
 
         mailSender.send(msg);
