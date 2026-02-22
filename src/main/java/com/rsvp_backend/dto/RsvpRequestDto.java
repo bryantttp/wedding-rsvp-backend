@@ -4,7 +4,6 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 
 
 public class RsvpRequestDto {
@@ -17,7 +16,6 @@ public class RsvpRequestDto {
     private String email;
 
     // ✅ NEW: additional guests (excluding the main person)
-    @NotNull(message = "Additional guest count is required")
     @Min(value = 0, message = "Additional guests cannot be less than 0")
     @Max(value = 10, message = "Additional guests cannot be more than 10")
     private Integer additionalCount;
