@@ -1,7 +1,5 @@
 package com.rsvp_backend.service;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -16,48 +14,34 @@ public class EmailService {
     private final String from;
 
     @Value("${spring.mail.password}")
-    private String mailPassword;   // 👈 DEBUG ONLY
+    private String mailPassword; // 👈 DEBUG ONLY (remove later)
 
     public EmailService(JavaMailSender mailSender,
                         @Value("${app.mail.from}") String from) {
         this.mailSender = mailSender;
         this.from = from;
     }
-        
+
     @PostConstruct
     public void debugMailConfig() {
         System.out.println("MAIL PASSWORD LOADED = " +
                 (mailPassword != null && !mailPassword.isBlank()));
     }
 
-    public void sendRsvpConfirmation(String to, String name, List<String> attendees) {
+    // ✅ NEW signature: additionalCount instead of List<String>
+    public void sendRsvpConfirmation(String to, String name, int additionalCount) {
 
-        // -----------------------------
-        // Build attendees section
-        // -----------------------------
-        String attendeesSection = "";
+        int totalAttendees = 1 + Math.max(0, additionalCount);
 
-        if (attendees != null && !attendees.isEmpty()) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("\n\nFamily Members Added:\n");
-
-            for (int i = 0; i < attendees.size(); i++) {
-                sb.append(i + 1)
-                .append(") ")
-                .append(attendees.get(i))
-                .append("\n");
-            }
-
-            attendeesSection = sb.toString();
-        }
-
-        // -----------------------------
-        // Full email text
-        // -----------------------------
         String emailText = """
                 Hi %s,
 
                 Thank you! We’ve received your RSVP and are so excited to celebrate with you 💍
+
+                RSVP Summary
+                -----------------------
+                Additional guests: %d
+                Total attendees: %d
 
                 Wedding Details
                 -----------------------
@@ -71,10 +55,9 @@ public class EmailService {
 
                 We truly appreciate you being part of our special day.
                 See you soon ❤️
-                %s
 
                 — Bryant & Cindy
-                """.formatted(name, attendeesSection);
+                """.formatted(name, additionalCount, totalAttendees);
 
         SimpleMailMessage msg = new SimpleMailMessage();
         msg.setFrom(from);

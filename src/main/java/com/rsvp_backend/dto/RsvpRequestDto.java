@@ -1,44 +1,34 @@
 package com.rsvp_backend.dto;
 
-import java.util.List;
-
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
 
 
 public class RsvpRequestDto {
 
-  @NotBlank
-  private String name;
+    @NotBlank
+    private String name;
 
-  @NotBlank
-  @Email(message = "Invalid email format")
-  private String email;
+    @NotBlank
+    @Email(message = "Invalid email format")
+    private String email;
 
-  @Size(max = 20, message = "Max 20 attendees")
-  private List<String> listOfAttendees;
+    // ✅ NEW: additional guests (excluding the main person)
+    @NotNull(message = "Additional guest count is required")
+    @Min(value = 0, message = "Additional guests cannot be less than 0")
+    @Max(value = 10, message = "Additional guests cannot be more than 10")
+    private Integer additionalCount;
 
-  public String getName() {
-      return name;
-  }
+    // getters/setters
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-  public void setName(String name) {
-      this.name = name;
-  }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 
-  public String getEmail() {
-      return email;
-  }
-  public void setEmail(String email) {
-      this.email = email;
-  }
-
-  public List<String> getListOfAttendees() {
-      return listOfAttendees;
-  }
-
-  public void setListOfAttendees(List<String> listOfAttendees) {
-      this.listOfAttendees = listOfAttendees;
-  }
+    public Integer getAdditionalCount() { return additionalCount; }
+    public void setAdditionalCount(Integer additionalCount) { this.additionalCount = additionalCount; }
 }

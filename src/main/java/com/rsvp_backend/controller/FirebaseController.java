@@ -46,8 +46,11 @@ public class FirebaseController {
     }
 
     @PostMapping("/save-rsvp")
-    public ResponseEntity<?> saveRsvp(@Valid @RequestBody RsvpRequestDto rsvpRequest) throws Exception{
+    public ResponseEntity<?> saveRsvp(@Valid @RequestBody RsvpRequestDto rsvpRequest) throws Exception {
+
+        String name = rsvpRequest.getName().trim();
         String email = rsvpRequest.getEmail().trim().toLowerCase();
+        int additionalCount = rsvpRequest.getAdditionalCount(); // validated 0..10
 
         // ✅ 1) Check if email already exists
         QuerySnapshot existing = firestore.collection("rsvps")
@@ -57,32 +60,23 @@ public class FirebaseController {
                 .get();
 
         if (!existing.isEmpty()) {
-            return ResponseEntity
-                    .status(HttpStatus.CONFLICT)
+            return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body("This email has already RSVP’d.");
         }
 
-        List<String> cleanedAttendees = rsvpRequest.getListOfAttendees().stream()
-            .map(String::trim)
-            .filter(s -> !s.isBlank())
-            .toList();
-
+        // ✅ 2) Save to Firestore
         Map<String, Object> doc = new HashMap<>();
-        doc.put("name", rsvpRequest.getName());
-        doc.put("email", rsvpRequest.getEmail());
-        if (cleanedAttendees != null && !cleanedAttendees.isEmpty()) {
-            doc.put("listOfAttendees", cleanedAttendees);
-        }
+        doc.put("name", name);
+        doc.put("email", email);
+        doc.put("additionalCount", additionalCount);
+        doc.put("totalAttendees", 1 + additionalCount); // handy for admin view
         doc.put("createdAt", FieldValue.serverTimestamp());
 
         firestore.collection("rsvps").add(doc).get();
 
+        // ✅ 3) Send confirmation email (optional)
         try {
-            emailService.sendRsvpConfirmation(
-                email,
-                rsvpRequest.getName().trim(),
-                cleanedAttendees
-            );
+            emailService.sendRsvpConfirmation(email, name, additionalCount);
         } catch (Exception e) {
             System.err.println("Email failed: " + e.getMessage());
         }
