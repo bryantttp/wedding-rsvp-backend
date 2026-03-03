@@ -50,7 +50,10 @@ public class FirebaseController {
 
         String name = rsvpRequest.getName().trim();
         String email = rsvpRequest.getEmail().trim().toLowerCase();
-        int additionalCount = rsvpRequest.getAdditionalCount(); // validated 0..10
+        int totalGuests = rsvpRequest.getTotalGuests() == null ? 1 : rsvpRequest.getTotalGuests();
+
+        // Clamp between 1 and 10
+        totalGuests = Math.max(1, Math.min(10, totalGuests));
 
         // ✅ 1) Check if email already exists
         QuerySnapshot existing = firestore.collection("rsvps")
@@ -68,15 +71,14 @@ public class FirebaseController {
         Map<String, Object> doc = new HashMap<>();
         doc.put("name", name);
         doc.put("email", email);
-        doc.put("additionalCount", additionalCount);
-        doc.put("totalAttendees", 1 + additionalCount); // handy for admin view
+        doc.put("totalGuests", totalGuests);
         doc.put("createdAt", FieldValue.serverTimestamp());
 
         firestore.collection("rsvps").add(doc).get();
 
         // ✅ 3) Send confirmation email (optional)
         try {
-            emailService.sendRsvpConfirmation(email, name, additionalCount);
+            emailService.sendRsvpConfirmation(email, name, totalGuests);
         } catch (Exception e) {
             System.err.println("Email failed: " + e.getMessage());
         }
