@@ -79,7 +79,7 @@ public class EmailService {
         helper.setText(html, true);
 
         // Put your image in: src/main/resources/static/email/hero.jpg (or resources/email/hero.jpg)
-        var img = new ClassPathResource("static/email/hero.jpg");
+        var img = new ClassPathResource("email/hero.jpg");
         helper.addInline(imageCid, img, "image/jpeg");
 
         mailSender.send(mimeMessage);
