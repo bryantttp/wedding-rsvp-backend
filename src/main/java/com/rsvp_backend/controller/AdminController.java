@@ -113,29 +113,29 @@ public class AdminController {
     ) {}
 
     @PostMapping("/send-email")
-public ResponseEntity<String> sendEmail(@RequestBody AdminBulkEmailRequest req) {
-    if (req == null) return ResponseEntity.badRequest().body("Missing request body");
+    public ResponseEntity<String> sendEmail(@RequestBody AdminBulkEmailRequest req) {
+        if (req == null) return ResponseEntity.badRequest().body("Missing request body");
 
-    if (req.recipients() == null || req.recipients().isEmpty()) {
-        return ResponseEntity.badRequest().body("No recipients selected");
-    }
-    if (req.subjectTemplate() == null || req.subjectTemplate().isBlank()) {
-        return ResponseEntity.badRequest().body("Subject template is required");
-    }
-    if (req.htmlTemplate() == null || req.htmlTemplate().isBlank()) {
-        return ResponseEntity.badRequest().body("HTML template is required");
-    }
+        if (req.recipients() == null || req.recipients().isEmpty()) {
+            return ResponseEntity.badRequest().body("No recipients selected");
+        }
+        if (req.subjectTemplate() == null || req.subjectTemplate().isBlank()) {
+            return ResponseEntity.badRequest().body("Subject template is required");
+        }
+        if (req.htmlTemplate() == null || req.htmlTemplate().isBlank()) {
+            return ResponseEntity.badRequest().body("HTML template is required");
+        }
 
-    try {
-        emailService.sendAdminBulkEmail(
-                req.recipients(),
-                req.subjectTemplate(),
-                req.htmlTemplate(),
-                req.extraBcc()
-        );
-        return ResponseEntity.ok("Sent " + req.recipients().size() + " email(s)");
-    } catch (MessagingException e) {
-        return ResponseEntity.status(500).body("Failed to send: " + e.getMessage());
+        try {
+            emailService.sendAdminBulkEmail(
+                    req.recipients(),
+                    req.subjectTemplate(),
+                    req.htmlTemplate(),
+                    req.extraBcc()
+            );
+            return ResponseEntity.ok("Sent " + req.recipients().size() + " email(s)");
+        } catch (MessagingException e) {
+            return ResponseEntity.status(500).body("Failed to send: " + e.getMessage());
+        }
     }
-}
 }
