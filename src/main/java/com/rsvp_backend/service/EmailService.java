@@ -63,7 +63,7 @@ public class EmailService {
                     </div>
                     <div style="height:16px;"></div>
                 </div>
-                <img src="https://bryant-and-cindy.vercel.app/hero.jpg" alt="Cindy & Bryant's Wedding" style="width:100%; display:block;">
+                <img src="https://bryant-and-cindy.vercel.app/hero.jpg" alt="Cindy & Bryant's Wedding" style="width:100%%; display:block;">
                 <div style="padding:24px;background:#FFF8E7;">
                 <p style="margin:18px 0 0; color:#5A3E2B;">Hi %s, thank you for your response. See you soon ❤️</p>
                 <div style="height:16px;"></div>
