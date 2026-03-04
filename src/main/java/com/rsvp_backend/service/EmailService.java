@@ -1,5 +1,11 @@
 package com.rsvp_backend.service;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -70,4 +76,89 @@ public class EmailService {
 
         mailSender.send(mimeMessage);
     }
+
+    // ======================================
+    // 2) ADMIN BULK SEND (subject + html + bcc)
+    // ======================================
+    /**
+     * Send a personalised email to EACH recipient:
+     * - subjectTemplate can contain {{name}} etc.
+     * - htmlTemplate can contain {{name}}, {{totalGuests}}, {{email}} etc.
+     * - extraBcc always BCCs these addresses on every email (optional)
+     */
+    public void sendAdminBulkEmail(
+            List<Recipient> recipients,
+            String subjectTemplate,
+            String htmlTemplate,
+            List<String> extraBcc
+    ) throws MessagingException {
+
+        List<String> safeBcc = (extraBcc == null) ? Collections.emptyList() : extraBcc;
+
+        for (Recipient r : recipients) {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+            helper.setFrom(from);
+            helper.setTo(r.email());
+            if (!safeBcc.isEmpty()) {
+                helper.setBcc(safeBcc.toArray(new String[0]));
+            }
+
+            int safeTotalGuests = clamp(r.totalGuests(), 1, 10);
+
+            Map<String, String> vars = Map.of(
+                    "name", r.name() == null ? "" : r.name(),
+                    "email", r.email() == null ? "" : r.email(),
+                    "totalGuests", String.valueOf(safeTotalGuests)
+            );
+
+            String subject = renderTemplate(subjectTemplate, vars);
+            String html = renderTemplate(htmlTemplate, vars);
+
+            helper.setSubject(subject);
+            helper.setText(html, true);
+
+            mailSender.send(mimeMessage);
+        }
+    }
+
+     private static int clamp(int v, int min, int max) {
+        return Math.max(min, Math.min(max, v));
+    }
+
+    // Simple HTML escape for user input (name/email).
+    private static String escapeHtml(String s) {
+        if (s == null) return "";
+        return s.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
+    }
+
+    /**
+     * Safe template render for {{placeholders}}.
+     * Unknown placeholders are left as-is (so your logic never "breaks").
+     */
+    private static String renderTemplate(String template, Map<String, String> vars) {
+        if (template == null) return "";
+        Pattern p = Pattern.compile("\\{\\{\\s*([a-zA-Z0-9_]+)\\s*}}");
+        Matcher m = p.matcher(template);
+        StringBuffer sb = new StringBuffer();
+        while (m.find()) {
+            String key = m.group(1);
+            String value = vars.get(key);
+            if (value == null) {
+                // leave unknown placeholders untouched
+                m.appendReplacement(sb, Matcher.quoteReplacement(m.group(0)));
+            } else {
+                m.appendReplacement(sb, Matcher.quoteReplacement(escapeHtml(value)));
+            }
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
+
+    public record Recipient(String name, String email, int totalGuests) {}
 }
