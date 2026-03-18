@@ -65,12 +65,13 @@ public class EmailService {
                 </div>
                 <img src="https://bryant-and-cindy.vercel.app/hero.jpg" alt="Cindy & Bryant's Wedding" style="width:100%%; display:block;">
                 <div style="padding:24px;background:#FFF8E7;">
-                <p style="margin:18px 0 0; color:#5A3E2B;">Hi %s, thank you for your response. See you soon ❤️</p>
+                    <p style="margin:0;">Hi %s, thank you for your RSVP. See you soon ❤️</p>
+                    <p style="margin:10px 0 0; font-size:13px; opacity:.85;">Total guests: <b>%d</b></p>
                 <div style="height:16px;"></div>
                 </div>
             </div>
         </div>
-        """.formatted(name);
+        """.formatted(name,totalGuests);
 
         helper.setText(html, true);
 
