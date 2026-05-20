@@ -41,9 +41,9 @@ public class FirebaseController {
 
     @PostMapping("/save-rsvp")
     public ResponseEntity<?> saveRsvp(@Valid @RequestBody RsvpRequestDto rsvpRequest) throws Exception {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body("RSVPs have closed. Thank you for your interest and support ❤️");
-        /* String name = rsvpRequest.getName().trim();
+        /* return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body("RSVPs have closed. Thank you for your interest and support ❤️");*/
+        String name = rsvpRequest.getName().trim();
         String email = rsvpRequest.getEmail().trim().toLowerCase();
         int totalGuests = rsvpRequest.getTotalGuests() == null ? 1 : rsvpRequest.getTotalGuests();
 
@@ -78,6 +78,6 @@ public class FirebaseController {
             System.err.println("Email failed: " + e.getMessage());
         }
 
-        return ResponseEntity.ok("RSVP received"); */
+        return ResponseEntity.ok("RSVP received");
     }
 }
